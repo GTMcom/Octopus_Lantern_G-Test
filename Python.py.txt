@@ -1,0 +1,96 @@
+from datetime import datetime
+from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client.client.write_api import SYNCHRONOUS
+from random import seed
+from random import randint
+import random
+import numpy as np
+import time
+token = "eMX5RvtfNIkn6RrjurRyNROzVw2Ipj8udDnLbBZNJqLsxJmmWN8FswNf-6nVESRTwoVLtuNfSzY-ilRgHzqVzQ=="
+org = "gatemarine"
+bucket = "Octopus_Power_DataBucket"
+client = InfluxDBClient(url="http://65.21.107.165:8086", token=token)
+measurement_style=1
+measurement_period=100
+last_measurementdata_ton=0;
+last_measurementdata_toff=0;
+def get_randomvoltage():
+    return randint(0,10)*0.1 + 12
+def get_randomcurrent_on():
+    return randint(0,10)*0.1 + 0.15
+def get_randomcurrent_off():
+    return  randint(0,5)*0.01+0.03
+measurement = "Octopus_Power_Measurement"
+
+
+Sensor_Data_Fake = {
+                                "bus_voltage": 0,
+                                "current": 0,
+                                
+                                }
+Sensor_Data_Fake1={
+    "bus_voltage":0,
+    "current":0,
+}
+#Sensor dataları initial olarak babşlatıldı
+client = InfluxDBClient(url="http://65.21.107.165:8086", token=token)
+write_api = client.write_api(write_options=SYNCHRONOUS)
+
+
+while(1):
+    
+    if(measurement_style==1):
+        for _ in range(20):
+            
+            
+            Sensor_Data_Fake["bus_voltage"]=get_randomvoltage()
+            Sensor_Data_Fake["current"]=get_randomcurrent_on()
+            power_ton=Sensor_Data_Fake["bus_voltage"]*Sensor_Data_Fake["current"]
+            data = [{
+                    "measurement": measurement,
+                    "tags": {
+                            "location": "GSMLİÇAKAR",
+                             },
+  
+                    "fields": {
+                    "bus_voltage": Sensor_Data_Fake["bus_voltage"],
+                    "current": Sensor_Data_Fake["current"],
+                    "power": power_ton
+                            }
+                        }]
+                
+            while ((int(round(time.time() *1000)) - last_measurementdata_ton) < measurement_period):
+                    pass
+                
+                
+            last_measurementdata_ton=int(round(time.time() *1000))
+            write_api.write(bucket, org, data)
+                    
+                
+                     
+                 
+        for _ in range(60):
+            Sensor_Data_Fake1["bus_voltage"]=get_randomvoltage()
+            Sensor_Data_Fake1["current"]=get_randomcurrent_off()
+            power_toff=Sensor_Data_Fake1["bus_voltage"]*Sensor_Data_Fake1["current"]
+            data1 = [{
+                        "measurement": measurement,
+                        "tags": {
+                        "location": "GSMLİÇAKAR",
+                        },
+                        "fields": {
+                        "bus_voltage": Sensor_Data_Fake1["bus_voltage"],
+                        "current": Sensor_Data_Fake1["current"],
+                        "power": power_toff
+                        }
+                    }]
+            write_api.write(bucket, org, data1)
+            now1=int(round(time.time() *1000))
+            
+            while ((int(round(time.time() *1000)) - last_measurementdata_toff) < measurement_period):
+                pass
+            last_measurementdata_toff=int(round(time.time() *1000))
+                            
+    #elif(measurement_style==0):
+        
+    #I2C okuması burada yapılacak 
